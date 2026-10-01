@@ -2,7 +2,7 @@
 #include <vector>
 #include <algorithm>
 #include <ranges>
-#include "../Structures/matrix.cpp"
+#include "../Structures/Matrix.cpp"
 
 using namespace std;
 using ll = long long;

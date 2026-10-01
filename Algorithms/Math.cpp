@@ -1,5 +1,5 @@
 #pragma once
-#include "extended_gcd.cpp"
+#include "ExtendedGCD.cpp"
 
 using ll = long long;
 using i128 = __int128;

@@ -2,11 +2,11 @@
 #include <vector>
 #include <span>
 #include <bit>
-#include "matrix.cpp"
+#include "Matrix.cpp"
 using namespace std;
 
 // Builds a Disjoint sparse table from input nums, into table. table dimensions must be (ceil(log2(n)), n).
-void dst_build(auto& table, const auto& nums, auto f) {
+void dst_build(auto& table, const auto& nums, auto f) { assert(table.rows() == bit_width(size(nums)));
     unsigned int n = size(nums);
     int ceil_log2_n = bit_width(n);
     unsigned int w = (1 << ceil_log2_n);
@@ -21,12 +21,12 @@ void dst_build(auto& table, const auto& nums, auto f) {
                 table[i, j] = (j > mid + 1) ? f(table[i, j - 1], nums[j]) : nums[j];
             }
         }
-        w >>= 1;
+        w /= 2;
     }
 }
 
-// Queries the Disjoint Sparse Table, from a to b. UNDEFINED for a >= b
-auto dst_query(const auto& table, unsigned int a, unsigned int b, auto f) {
+// Queries the Disjoint Sparse Table made from n elements, from a to b. UNDEFINED for a >= b
+auto dst_query(auto&& table, unsigned int n, unsigned int a, unsigned int b, auto f) {
     assert(a < b);
     int i = bit_width(n) - bit_width(a^b); // first differing bit index
     return f(table[i, a], table[i, b]);
@@ -44,13 +44,13 @@ struct DisjointSparseTable {
         n = size(input);
         nums = input;
         k = bit_width(n); 
-        table = Table(k, n);
+        table.resize(k, n);
         dst_build(table, input, f);
     }
     
     T query(unsigned int a, unsigned int b) {
         if (a == b) return nums[a];
-        return dst_query(table, a, b, f);
+        return dst_query(table, n, a, b, f);
     }
 };
 

@@ -11,4 +11,4 @@ int lcs_via_lis_length(span<int> A, span<int> B) {
     int n = A.size(); int m = B.size();
     for (int i = 0; i < m; i++) 
         int j = ranges::find(A, B[i]);
-}
+} 

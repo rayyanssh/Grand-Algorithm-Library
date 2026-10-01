@@ -1,12 +1,12 @@
 #pragma once
 #include <vector>
-#include "../utils.cpp"
+#include "../Utils.cpp"
 using std::vector;
 
 // All graph represntations assume 1-indexed vertices
  
-constexpr bool Undirected = false;
-constexpr bool Directed = true;
+constexpr bool undirected = false;
+constexpr bool directed = true;
  
 // Weight can be a simple int weight for example, 
 // or a payload structure containing more data about the edge, or be absent (Unweighted)
@@ -18,8 +18,12 @@ struct OutgoingEdge {
 
 
 // Dynamic Linked Adjacency List (also known as Chained Forward Star).
+// 1st param is the weight type, "none" meaning unweighted. 
+// 2nd param is to indicate if it is directed or undirected.
+// Unweighted graph is analogous to vector<vector<int>>.
+// Weighted graph is analogous to vector<vector<pair<int, Weight>>>.
 // 1-indexed vertices.
-template<typename Weight = none, bool Directed = false>
+template<typename Weight = none, bool Dir = directed>
 struct LinkedAdjList {
     using OutEdge = OutgoingEdge<Weight>;
     vector<OutEdge> pool;
@@ -28,7 +32,11 @@ struct LinkedAdjList {
     
     void add_edge(int u, int v, Weight w = {}) { 
         add_directed_edge(u, v, w); 
-        add_directed_edge(v, u, w); 
+        if constexpr (Dir == undirected) add_directed_edge(v, u, w); 
+    }
+    void delete_edge(int u, int v) { 
+        delete_directed_edge(u, v); 
+        if constexpr (Dir == undirected) delete_directed_edge(v, u); 
     }
     // next_free is the index of the next free slot in the pool, or -1 if there are no free slots
     int next_free = -1;
@@ -80,6 +88,9 @@ struct LinkedAdjList {
     auto operator[](int u) { 
         return ranges::subrange(Iterator{this, head[u]}, Iterator{this, -1});
     } 
+    using iterator = Iterator;
+    auto begin() { return Iterator{this, head[1]}; }
+    auto end() { return Iterator{this, -1}; }
 };
 
 

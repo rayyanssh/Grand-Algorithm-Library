@@ -1,5 +1,5 @@
 #include <vector>
-#include "matrix.cpp"
+#include "Matrix.cpp"
 #include <bit>
 
 using namespace std;
