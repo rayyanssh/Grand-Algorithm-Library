@@ -1,6 +1,6 @@
 #pragma once
 
-#include "math.cpp"
+#include "../Math.hpp"
 
 using ll = long long;
 using i128 = __int128;
