@@ -1,7 +1,13 @@
 #include "Matrix.hpp"
-// Polymorphic wrapper that can hold a pointer to any matrix type
+namespace Grand {
+// Polymorphic wrapper around any Matrix type. Points to the matrix rather than copying it.
+// Example usage:
+// `Matrix<int, 3, 3> M;`
+// `AnyMatrix<int> A = M;`
+// `Matrix<int> N(3, 3);`
+// `AnyMatrix<int> B = N;`
 template<typename T>
-struct AnyMatrix : MatrixRules<T> {
+struct AnyMatrix : MatrixRules {
     void* matrix;
     int (*rows_func)(void*);
     int (*cols_func)(void*);
@@ -17,3 +23,4 @@ struct AnyMatrix : MatrixRules<T> {
     T& operator[](int i, int j) const { return access(matrix, i, j); }
 };
 template<MatrixType M> AnyMatrix(M& A) -> AnyMatrix<typename M::value_type>;
+}

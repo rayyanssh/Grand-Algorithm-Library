@@ -3,7 +3,8 @@
 #include <array>
 #include <vector>
 #include <span>
-#include "../../Utils.hpp"  // brings constexpr int dynamic = -1
+#include <iostream>
+#include "../Utils.hpp"  // brings constexpr int dynamic = -1
 namespace Grand {
 template<typename M> concept MatrixType = requires(M A) { A.rows(); A.cols(); A[0, 0]; };   
 template<typename M> concept ViewMatrixType = MatrixType<M> && !requires(M A) { A.storage; };
@@ -65,7 +66,7 @@ struct Matrix : MatrixRules {
 // Dynamic size matrix. 
 // Example: Matrix<int> M(3,4) creates a 3x4 matrix of ints.
 // Example: Matrix<int, dynamic, 5> M(3,5) creates a 3x5 matrix of ints. 
-// .storage is a vector<T> of size n*m.
+// .storage is a vector<T> of size n*m. T = bool won't compile.
 template<typename T, int N, int M> requires (N == dynamic || M == dynamic)
 struct Matrix<T, N, M> : MatrixRules {
     int n, m;
@@ -191,6 +192,13 @@ constexpr void MatrixRules::fill(this auto& self, int n, int m, auto val) { asse
 }
 constexpr bool MatrixRules::operator==(this const auto& self, const MatrixType auto& other) {
     return is_equal(self, other);
+}
+void MatrixRules::print(this const auto& self) { 
+    for (int i = 0; i < self.rows(); i++) {
+        for (int j = 0; j < self.cols(); j++)
+            std::cout << self[i, j] << " ";
+        std::cout << "\n";
+    }
 }
 
 template<typename T> concept NestedType2D = requires(T t) { t[0][0]; size(t); size(t[0]); };
