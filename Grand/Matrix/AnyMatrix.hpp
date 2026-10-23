@@ -1,4 +1,4 @@
-#include "Matrix.hpp"
+#include "../Matrix.hpp"
 namespace Grand {
 // Polymorphic wrapper around any Matrix type. Points to the matrix rather than copying it.
 // Example usage:

@@ -11,11 +11,12 @@
 #include <span>
 
 namespace Grand {
+namespace rgs = std::ranges;
 using std::integral, std::floating_point,  std::swap, std::max, std::min, std::array, std::vector, std::span,
       std::pair, std::tuple, std::make_tuple, std::get, std::apply, std::tie,
       std::countr_zero, std::countl_zero, std::countr_one, std::countl_one, std::popcount, std::has_single_bit, std::bit_ceil, std::bit_floor, std::bit_width,
-      std::is_same_v, std::remove_cvref_t, std::remove_reference_t, std::remove_const_t,
-      std::conditional_t;
+      std::is_same_v, std::remove_cvref_t, std::remove_reference_t, std::remove_const_t, std::conditional_t,
+      std::move;
 
 template<typename T> using init_list = std::initializer_list<T>;
 template<typename T> concept Number = integral<T> || floating_point<T>;

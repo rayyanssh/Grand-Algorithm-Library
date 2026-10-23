@@ -1,8 +1,5 @@
 #pragma once
-#include <cassert> 
-#include <array>
-#include <vector>
-#include <span>
+#include <cassert>  
 #include <iostream>
 #include "../Utils.hpp"  // brings constexpr int dynamic = -1
 namespace Grand {
@@ -193,13 +190,16 @@ constexpr void MatrixRules::fill(this auto& self, int n, int m, auto val) { asse
 constexpr bool MatrixRules::operator==(this const auto& self, const MatrixType auto& other) {
     return is_equal(self, other);
 }
-void MatrixRules::print(this const auto& self) { 
-    for (int i = 0; i < self.rows(); i++) {
-        for (int j = 0; j < self.cols(); j++)
-            std::cout << self[i, j] << " ";
+
+void print(const MatrixType auto& A) {
+    for (int i = 0; i < A.rows(); i++) {
+        for (int j = 0; j < A.cols(); j++) 
+            std::cout << A[i,j] << " ";
         std::cout << "\n";
     }
 }
+
+void MatrixRules::print(this const auto& self) { Grand::print(self); }
 
 template<typename T> concept NestedType2D = requires(T t) { t[0][0]; size(t); size(t[0]); };
 // Convert a 2d array or vector, or similar nested type

@@ -2,10 +2,7 @@
 #include <tuple>
 #include <bit>
 using ll = long long; using u64 = unsigned long long; using i128 = __int128;
-using std::tuple, std::pair, std::tie, std::countr_zero, std::swap;
-
-// naive, std::gcd already exists
-ll GCD(ll a, ll b) { return b == 0 ? a : GCD(b, a % b); }
+using std::tuple, std::pair, std::tie, std::countr_zero, std::swap; 
 
 // extended gcd
 // recursive, returns r, s, t  where r = sa + tb = gcd(a,b)
