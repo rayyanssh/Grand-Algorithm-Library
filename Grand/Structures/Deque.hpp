@@ -1,42 +1,57 @@
 #include "../Utils.hpp"
+
 namespace Grand {
 template<typename Deque> struct DequeIterator;
-// Circular Deque.
-// Resizing invalidates iterators, references/pointers to elements.
-// Resize/declare size upfront to avoid invalidation.
-// max capacity is 2^31-1
+// Fast Circular Deque, keeps internal capacity at a power of 2 to allow fast bit modulo operations.
+// Resizing upon pushing elements can invalidate iterators.
+// Reserve upfront to avoid invalidation. 
+// Max capacity is 2^30 ≈ 1 billion
 template<typename T>
 struct Deque {
     using value_type = T;
     vector<T> data;
     unsigned int start = 0, _end;
-    // Rounds up internal vector's size to nearest power of 2, to allow fast bit modulo operations
-    Deque(unsigned int n = 0, T val = {}) : data(bit_ceil(n), val), _end(n) {}
-    unsigned mod_by_size(unsigned int i) const { return i & (data.size() - 1); }
-
-    T& operator[](int i) { return data[mod_by_size(start+i)]; }     const T& operator[](int i) const { return data[mod_by_size(start+i)]; }
+    Deque() : data(), _end(0) {}
+    // Initialize deque with n elements. Rounds up capacity to nearest power of 2.
+    Deque(unsigned int n, T val = {}) : data(bit_ceil(n), val), _end(n) {}
+    unsigned mod_capacity(unsigned k) const { return k & (capacity() - 1); }
+    T& operator[](int i) { return data[mod_capacity(start+i)]; }     const T& operator[](int i) const { return data[mod_capacity(start+i)]; }
 
     void push_back(T val) {
         if (full()) grow();
-        data[mod_by_size(_end++)] = move(val);
-    }
-    T pop_back()     { return move(data[mod_by_size(--_end)]); }
-    T& back() { return data[mod_by_size(_end-1)]; }                 const T& back() const { return data[mod_by_size(_end-1)]; }
+        data[mod_capacity(_end++)] = move(val);
+    } 
+    T pop_back()     { return move(data[mod_capacity(--_end)]); }
+    T& back() { return data[mod_capacity(_end-1)]; }                 const T& back() const { return data[mod_capacity(_end-1)]; }
 
     void push_front(T val) {
         if (full()) grow();
-        data[mod_by_size(--start)] = move(val);
+        data[mod_capacity(--start)] = move(val);
     }
-    T pop_front()     { return move(data[mod_by_size(start++)]); }
-    T& front() { return data[mod_by_size(start)]; }                 const T& front() const { return data[mod_by_size(start)]; }
+    T pop_front()     { return move(data[mod_capacity(start++)]); }
+    T& front() { return data[mod_capacity(start)]; }                 const T& front() const { return data[mod_capacity(start)]; }
+   
+    unsigned size() const { return _end - start; } 
+    int  capacity() const { return data.size(); }
+    bool    empty() const { return _end == start; } 
+    
+    // Rounds up capacity to nearest power of 2
+    void reserve(unsigned int n) { 
+        if (capacity() < bit_ceil(n)) {
+            rgs::rotate(data, data.begin() + mod_capacity(start));
+            _end = _end - start;
+            start = 0;
+            data.resize(bit_ceil(n));
+        }
+    }
 
     void clear() { start = _end = 0; }
 
     void resize(unsigned int n, T val = {}) {
         while (size() > n) pop_back();
-        if (n > data.size()) {
+        if (n > capacity()) {
             unsigned old = size();
-            rgs::rotate(data, data.begin() + mod_by_size(start));
+            rgs::rotate(data, data.begin() + mod_capacity(start));
             start = 0;
             _end = n;
             data.resize(bit_ceil(n));
@@ -44,21 +59,18 @@ struct Deque {
         }
         else while (size() < n) push_back(val);
     }
-    
-    unsigned size() const { return _end - start; } 
-    bool    empty() const { return _end == start; } 
 
-    auto begin() { return DequeIterator{data.data(), unsigned(data.size()-1), start}; }  auto begin() const { return DequeIterator{data.data(), data.size()-1, start}; }
-    auto end()   { return DequeIterator{data.data(), unsigned(data.size()-1), _end}; }   auto end()   const { return DequeIterator{data.data(), data.size()-1, _end}; }
+    auto begin() { return DequeIterator{data.data(), unsigned(capacity()-1), start}; }  auto begin() const { return DequeIterator{data.data(), capacity()-1, start}; }
+    auto end()   { return DequeIterator{data.data(), unsigned(capacity()-1), _end}; }   auto end()   const { return DequeIterator{data.data(), capacity()-1, _end}; }
     
 private:
-    bool full() const { return size() == data.size(); }
+    bool full() const { return size() == capacity(); }
     void grow() {
-        rgs::rotate(data, data.begin() + mod_by_size(start));
+        rgs::rotate(data, data.begin() + mod_capacity(start));
         start = 0;
-        _end = data.size();
-        data.resize(2 * data.size());
-    } 
+        _end = capacity();
+        data.resize(2 * capacity());
+    }  
 };
 
 

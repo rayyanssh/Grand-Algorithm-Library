@@ -4,17 +4,8 @@
 using ll = long long; using u64 = unsigned long long; using i128 = __int128;
 using std::tuple, std::pair, std::tie, std::countr_zero, std::swap; 
 
-// extended gcd
-// recursive, returns r, s, t  where r = sa + tb = gcd(a,b)
-inline tuple<ll, ll, ll> ext_gcd_rec(ll a, ll b) {
-    if (b == 0) return {a, 1, 0};
-    auto [r, s0, t0] = ext_gcd_rec(b, a % b);
-    ll s = t0;
-    ll t = s0 - (a/b) * t0;
-    return {r, s, t};
-}
-
-// iterative, returns r, s, t  where r = sa + tb = gcd(a,b)
+namespace Grand {
+// iterareturns r, s, t  where r = sa + tb = gcd(a,b)
 inline tuple<ll,ll,ll> ext_gcd(ll a, ll b) {
     ll s0 = 1, s1 = 0;
     ll a_ = a, b_ = b;
@@ -48,4 +39,7 @@ tuple<u64,ll,ll> binary_ext_gcd(u64 a, u64 b) {
     int shift = countr_zero(a | b);
     a >>= countr_zero(a);
     return {0, 0, 0}; // unimplemented
+}
+
+
 }
