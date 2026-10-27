@@ -11,29 +11,39 @@ struct Deque {
     using value_type = T;
     vector<T> data;
     unsigned int start = 0, _end;
-    Deque() : data(), _end(0) {}
+    Deque() : data(1), _end(0) {}
     // Initialize deque with n elements. Rounds up capacity to nearest power of 2.
-    Deque(unsigned int n, T val = {}) : data(bit_ceil(n), val), _end(n) {}
+    Deque(unsigned n, T val = {}) : data(bit_ceil(n), val), _end(n) {}
+
     unsigned mod_capacity(unsigned k) const { return k & (capacity() - 1); }
+
     T& operator[](int i) { return data[mod_capacity(start+i)]; }     const T& operator[](int i) const { return data[mod_capacity(start+i)]; }
 
-    void push_back(T val) {
-        if (full()) grow();
-        data[mod_capacity(_end++)] = move(val);
-    } 
-    T pop_back()     { return move(data[mod_capacity(--_end)]); }
+    void push_back(const T& val) {
+        if (size() == capacity()) { T tmp = val; reserve(2 * size()); push_back(std::move(tmp)); }
+        else data[mod_capacity(_end++)] = val;
+    }
+    void push_back(T&& val) {
+        if (size() == capacity()) reserve(2 * size());
+        data[mod_capacity(_end++)] = std::move(val);
+    }
+    T pop_back() { return std::move(data[mod_capacity(--_end)]); }
     T& back() { return data[mod_capacity(_end-1)]; }                 const T& back() const { return data[mod_capacity(_end-1)]; }
 
-    void push_front(T val) {
-        if (full()) grow();
-        data[mod_capacity(--start)] = move(val);
+    void push_front(const T& val) {
+        if (size() == capacity()) { T tmp = val; reserve(2 * size()); push_front(std::move(tmp)); }
+        else data[mod_capacity(--start)] = val;
     }
-    T pop_front()     { return move(data[mod_capacity(start++)]); }
+    void push_front(T&& val) {
+        if (size() == capacity()) reserve(2 * size());
+        data[mod_capacity(--start)] = std::move(val);
+    }
+    T pop_front() { return std::move(data[mod_capacity(start++)]); }
     T& front() { return data[mod_capacity(start)]; }                 const T& front() const { return data[mod_capacity(start)]; }
    
-    unsigned size() const { return _end - start; } 
-    int  capacity() const { return data.size(); }
-    bool    empty() const { return _end == start; } 
+    unsigned size()     const { return _end - start; } 
+    unsigned capacity() const { return data.size(); }
+    bool     empty()    const { return _end == start; } 
     
     // Rounds up capacity to nearest power of 2
     void reserve(unsigned int n) { 
@@ -41,7 +51,7 @@ struct Deque {
             rgs::rotate(data, data.begin() + mod_capacity(start));
             _end = _end - start;
             start = 0;
-            data.resize(bit_ceil(n));
+            data.resize(bit_ceil(n)); 
         }
     }
 
@@ -49,28 +59,12 @@ struct Deque {
 
     void resize(unsigned int n, T val = {}) {
         while (size() > n) pop_back();
-        if (n > capacity()) {
-            unsigned old = size();
-            rgs::rotate(data, data.begin() + mod_capacity(start));
-            start = 0;
-            _end = n;
-            data.resize(bit_ceil(n));
-            std::fill(data.begin() + old, data.begin() + n, val);
-        }
-        else while (size() < n) push_back(val);
+        if (n > capacity()) reserve(n);
+        while (size() < n) push_back(val);
     }
 
-    auto begin() { return DequeIterator{data.data(), unsigned(capacity()-1), start}; }  auto begin() const { return DequeIterator{data.data(), capacity()-1, start}; }
-    auto end()   { return DequeIterator{data.data(), unsigned(capacity()-1), _end}; }   auto end()   const { return DequeIterator{data.data(), capacity()-1, _end}; }
-    
-private:
-    bool full() const { return size() == capacity(); }
-    void grow() {
-        rgs::rotate(data, data.begin() + mod_capacity(start));
-        start = 0;
-        _end = capacity();
-        data.resize(2 * capacity());
-    }  
+    auto begin() { return DequeIterator{data.data(), unsigned(capacity()-1), start}; }  auto begin() const { return DequeIterator{data.data(), unsigned(capacity()-1), start}; }
+    auto end()   { return DequeIterator{data.data(), unsigned(capacity()-1), _end}; }   auto end()   const { return DequeIterator{data.data(), unsigned(capacity()-1), _end}; }
 };
 
 
@@ -79,7 +73,7 @@ struct DequeIterator {
     using value_type = std::remove_const_t<T>;
     T* base = nullptr; unsigned mod_mask = 0, pos = 0;  
     T& operator*() const { return base[pos & mod_mask]; }
-    T& operator[](int i) const { return *(*this + i); }
+    T& operator[](int i) const { return base[(pos+i) & mod_mask]; }
     auto& operator++() { pos++; return *this; } auto operator++(int) { auto copy = *this; pos++; return copy; }
     auto& operator--() { pos--; return *this; } auto operator--(int) { auto copy = *this; pos--; return copy; }
     auto& operator+=(int i) { pos += i; return *this; }
@@ -90,6 +84,6 @@ struct DequeIterator {
     auto operator==(DequeIterator o) const { return pos == o.pos; }
     auto operator<=>(DequeIterator o) const { return int(pos - o.pos) <=> 0; }
 };
-static_assert(std::random_access_iterator<DequeIterator<Deque<int>>>); 
+static_assert(std::random_access_iterator<DequeIterator<int>>); 
 
 }

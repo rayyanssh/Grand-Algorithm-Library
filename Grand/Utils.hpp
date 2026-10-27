@@ -2,7 +2,6 @@
 // Just general utilities that I use often
 #include <concepts> 
 #include <bit>
-#include <initializer_list>
 #include <iterator>
 #include <type_traits> 
 #include <algorithm>
@@ -29,8 +28,8 @@ template<class T> concept ForwardIt    = std::forward_iterator<T>;
 template<class T> concept BidirRange   = rgs::bidirectional_range<T>; 
 template<class T> concept BidirIt      = std::bidirectional_iterator<T>;
 
-template<class T> concept RA_Range      = rgs::random_access_range<T>; 
-template<class T> concept RA_It         = std::random_access_iterator<T>;
+template<class T> concept RA_Range     = rgs::random_access_range<T>; 
+template<class T> concept RA_It        = std::random_access_iterator<T>;
 
 template<class T> concept ContRange    = rgs::contiguous_range<T>; 
 template<class T> concept ContIt       = std::contiguous_iterator<T>;
@@ -39,25 +38,6 @@ template<class T> concept ContIt       = std::contiguous_iterator<T>;
 template<typename T> concept Number = integral<T> || floating_point<T>;
 struct none{};
 constexpr int dynamic = -1; 
-
-
-template<int D, int N>
-void ndcopy(const auto& src, auto& dest, const array<int, N>& dims, array<int, N>& idx) {
-    if constexpr (D == N) std::apply([&](auto... i) { dest[i...] = src[i...]; }, idx);
-    else for (idx[D] = 0; idx[D] < dims[D]; ++idx[D])
-            ndcopy<D + 1>(src, dest, dims, idx);
-}
-template<int N>
-void ndcopy(const auto& src, auto& dest, array<int, N> dims) {
-    array<int, N> idx{};
-    ndcopy<0>(src, dest, dims, idx);
-}
-void ndcopy(const auto& src, auto& dest, auto... dims) {
-    ndcopy(src, dest, array{dims...});
-}
-
-
-
 
 } // namespace Grand
 

@@ -11,12 +11,19 @@ array<pair<int,int>, 8> neighbors(int i, int j) {
 
 SymmetricMatrix<int> knight_moves_grid(int n) { assert(n>=4);
     SymmetricMatrix<int> M(n);
-    M[2,1] = 1;
+    M[0,0] = M[2,1] = 1;
     Deque<pair<int, int>> q; 
     q.push_back({2,1});
+    auto valid = [=](int i, int j) { return 0<=i&&i<n&&0<=j&&j<n; };
     while (!q.empty()) {
-        for (auto [i,j] : neighbors(q.pop())) {
-
+        auto [i,j] = q.pop_front();
+        for (auto [ni, nj] : neighbors(i, j)) {
+            if (valid(ni, nj) && !M[ni, nj]) {
+                M[ni, nj] = M[i, j] + 1;
+                q.push_back({ni, nj});
+            }  
         }
     }
+    M[0,0] = 0;
+    return M;
 }
