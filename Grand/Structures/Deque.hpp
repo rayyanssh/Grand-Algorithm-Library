@@ -1,5 +1,5 @@
 #include "../Utils.hpp"
-
+#include <vector>
 namespace Grand {
 template<typename Deque> struct DequeIterator;
 // Fast Circular Deque, keeps internal capacity at a power of 2 to allow fast bit modulo operations.
@@ -9,12 +9,15 @@ template<typename Deque> struct DequeIterator;
 template<typename T>
 struct Deque {
     using value_type = T;
-    vector<T> data;
+    std::vector<T> data;
     unsigned int start = 0, _end;
     Deque() : data(1), _end(0) {}
     // Initialize deque with n elements. Rounds up capacity to nearest power of 2.
-    Deque(unsigned n, T val = {}) : data(bit_ceil(n), val), _end(n) {}
-
+    explicit Deque(unsigned n, T val = {}) : data(bit_ceil(n), val), _end(n) {}
+    Deque(const InputRange auto& r) : data(bit_ceil(rgs::size(r))), _end(rgs::size(r)) {
+        rgs::copy(r, data.begin());
+    }
+    Deque(init_list<T> init) : Deque(span(init)) {}
     unsigned mod_capacity(unsigned k) const { return k & (capacity() - 1); }
 
     T& operator[](int i) { return data[mod_capacity(start+i)]; }     const T& operator[](int i) const { return data[mod_capacity(start+i)]; }
@@ -27,6 +30,8 @@ struct Deque {
         if (size() == capacity()) reserve(2 * size());
         data[mod_capacity(_end++)] = std::move(val);
     }
+    void extend_back(InputRange auto&& r) { for (auto&& e : r) push_back(e); }
+    void extend_back(init_list<T> init) { extend_back(span(init)); } 
     T pop_back() { return std::move(data[mod_capacity(--_end)]); }
     T& back() { return data[mod_capacity(_end-1)]; }                 const T& back() const { return data[mod_capacity(_end-1)]; }
 
@@ -38,6 +43,8 @@ struct Deque {
         if (size() == capacity()) reserve(2 * size());
         data[mod_capacity(--start)] = std::move(val);
     }
+    void extend_front(InputRange auto&& r) { for (auto&& e : r) push_front(e); }
+    void extend_front(init_list<T> init) { extend_front(span(init)); } 
     T pop_front() { return std::move(data[mod_capacity(start++)]); }
     T& front() { return data[mod_capacity(start)]; }                 const T& front() const { return data[mod_capacity(start)]; }
    
@@ -85,5 +92,5 @@ struct DequeIterator {
     auto operator<=>(DequeIterator o) const { return int(pos - o.pos) <=> 0; }
 };
 static_assert(std::random_access_iterator<DequeIterator<int>>); 
-
+ 
 }

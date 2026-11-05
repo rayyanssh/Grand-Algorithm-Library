@@ -5,7 +5,8 @@ using ll = long long; using u64 = unsigned long long; using i128 = __int128;
 using std::tuple, std::pair, std::tie, std::countr_zero, std::swap; 
 
 namespace Grand {
-// iterareturns r, s, t  where r = sa + tb = gcd(a,b)
+// iterative extended gcd.
+// returns r, s, t  where r = sa + tb = gcd(a,b)
 inline tuple<ll,ll,ll> ext_gcd(ll a, ll b) {
     ll s0 = 1, s1 = 0;
     ll a_ = a, b_ = b;
