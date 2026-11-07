@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include "../../../Grand/Structures/SegmentTree.hpp"
 using namespace std;
 using ull = unsigned long long; 
 constexpr int MOD = 998244353;
@@ -18,9 +19,11 @@ int main() {
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 
-    int n, q; cin >> n >> q;
+    int n, q; cin >> n >> q; 
     vector<char> p(n+1);
     for (int i = 1; i <= n; i++) { int v; cin >> v; p[i] = v-1; }
+    auto f = [](int a, int b) { return a + b ;};
+    Grand::SegmentTree S(p, f); 
     while (q--) {
         char op; int x, y;
         cin >> op >> x >> y;

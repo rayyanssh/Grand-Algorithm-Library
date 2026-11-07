@@ -27,9 +27,8 @@ struct MatrixRules {
     constexpr void copy(this auto& self, const MatrixType auto& other, int n, int m) { assert(n <= self.rows() && m <= self.cols()); assert(n <= other.rows() && m <= other.cols());
         for (int i = 0; i < n; i++)
             for (int j = 0; j < m; j++)
-                self[i, j] = move(other[i, j]);
-        return self;
-    }
+                self[i, j] = other[i, j]; 
+    } 
     constexpr void fill(this auto& self, int n, int m, auto val) {                     assert(n <= self.rows() && m <= self.cols());
         for (int i = 0; i < n; i++)
             for (int j = 0; j < m; j++)
@@ -64,12 +63,14 @@ struct Matrix : MatrixRules {
     constexpr auto& operator[](this auto&& self, int k) { return self.storage[k]; }
     constexpr auto& operator[](this auto&& self, int i, int j) { return self.storage[i * M + j]; }
     constexpr auto row(this auto&& self, int i) { return span(&self[i, 0], self.cols()); }
+    // Returns a view of the matrix. `MatrixView`.
+    constexpr auto view(this auto&& self); 
 
-    constexpr int rows() const { return N; }
-    constexpr int cols() const { return M; }
+    consteval int rows() const { return N; }
+    consteval int cols() const { return M; }
     constexpr auto begin(this auto&& self) { return self.storage.begin(); }
     constexpr auto   end(this auto&& self) { return self.storage.end(); }
-    constexpr auto* data(this auto&& self) { return self.storage.data(); }
+    constexpr auto* data(this auto&& self) { return self.storage.data(); } 
     using MatrixRules::operator=;
     using value_type = T;
 };
@@ -100,8 +101,10 @@ struct Matrix<T, N, M> : MatrixRules {
     auto& operator[](this auto&& self, int k) { return self.storage[k]; }
     auto& operator[](this auto&& self, int i, int j) { return self.storage[i * self.cols() + j]; }
     auto row(this auto&& self, int i) { return span(&self[i, 0], self.cols()); }
+    // Returns a view of the matrix. `MatrixView`.
+    constexpr auto view(this auto&& self);
 
-    void resize(int r, int c, T val={}) requires (N != 1 && M != 1) { 
+    void resize(int r, int c, T val = {}) requires (N != 1 && M != 1) { 
         n = r;      assert(N == dynamic || r == N); 
         m = c;      assert(M == dynamic || c == M);
         storage.resize(n*m, val); 
@@ -152,7 +155,7 @@ using Vector = Matrix<T,N,1>;
 template<typename T, int M = dynamic>
 using RowVector = Matrix<T,1,M>;
 
-// Decide if to hold a copy of the matrix's attributes, or a reference.
+// Decide if to hold a copy of the matrix (if its a cheap view type), or a reference.
 template<MatrixType M>
 using HoldThisMatrix = conditional_t<
     ViewMatrixType<M>,
@@ -161,7 +164,7 @@ using HoldThisMatrix = conditional_t<
 >;
 
 
-// Makes a view of the submatrix defined by corner (i,j) and the dimensions (rows, cols).
+// Makes a view of the submatrix defined by corner `(i,j)` and the dimensions `(rows, cols)`.
 // `constexpr int dynamic = -1;`.
 // members: `M&` or `M matrix;` `int start_i, start_j, r, c;`. 
 template<MatrixType M, int R = dynamic, int C = dynamic>
@@ -170,18 +173,25 @@ struct SubMatrix : MatrixRules {
     auto& operator[](int i, int j) const { return matrix[start_i + i, start_j + j]; }
     constexpr int rows() const { return R == dynamic ? r : R; }
     constexpr int cols() const { return C == dynamic ? c : C; } 
+    constexpr SubMatrix& operator=(const SubMatrix& other) { 
+        copy(other, rows(), cols());
+        return *this;
+    }
     using MatrixRules::operator=;
     using value_type = M::value_type;
 };
 
 // Returns a view of the submatrix defined by corner `(i,j)` and the dimensions `(rows, cols)`. 
+// Omit `rows` to take every row from `i` to end. Omit `cols` to take every column from `j` to end.
 template<int R = dynamic, int C = dynamic> 
-constexpr auto submatrix(MatrixType auto&& matrix, int i, int j, int rows = 0, int cols = 0) { 
+constexpr auto submatrix(MatrixType auto&& matrix, int i, int j, int rows = R, int cols = C) { 
+    if (rows == dynamic) rows = matrix.rows() - i;
+    if (cols == dynamic) cols = matrix.cols() - j;
     using M = remove_reference_t<decltype(matrix)>;
     return SubMatrix<M, R, C>{ {},
         matrix, i, j, 
-        R == dynamic ? rows : R, 
-        C == dynamic ? cols : C
+        rows,
+        cols
     };
 }
 
@@ -215,6 +225,6 @@ struct Matrify : MatrixRules {
     constexpr int rows() const { return size(grid); }
     constexpr int cols() const { return size(grid[0]); }
     using value_type = remove_reference_t<decltype(grid[0][0])>;
-    using MatrixRules::operator=;
+    using MatrixRules::operator=; 
 };
 }
