@@ -20,22 +20,20 @@ using std::integral, std::floating_point,  std::swap, std::max, std::min, std::m
       std::is_same_v, std::is_const_v, std::is_reference_v, std::conditional_t, std::convertible_to,
       std::remove_cvref_t, std::remove_reference_t, std::remove_const_t, std::remove_pointer_t;
     
-template<class T> concept InputRange   = rgs::input_range<T>; 
-template<class T> concept InputIt      = std::input_iterator<T>;
-
-template<class T> concept ForwardRange = rgs::forward_range<T>; 
-template<class T> concept ForwardIt    = std::forward_iterator<T>;
-
-template<class T> concept BidirRange   = rgs::bidirectional_range<T>; 
-template<class T> concept BidirIt      = std::bidirectional_iterator<T>;
-
-template<class T> concept RA_Range     = rgs::random_access_range<T>; 
-template<class T> concept RA_It        = std::random_access_iterator<T>;
-
-template<class T> concept ContRange    = rgs::contiguous_range<T>; 
-template<class T> concept ContIt       = std::contiguous_iterator<T>;
-
-template<class T> concept SizedRange   = rgs::sized_range<T>;
+#define RANGE_CONCEPT(name, ...) \
+    template<class T> concept name = __VA_ARGS__;
+RANGE_CONCEPT(InputRange,   rgs::input_range<T>)
+RANGE_CONCEPT(InputIt,      std::input_iterator<T>)
+RANGE_CONCEPT(ForwardRange, rgs::forward_range<T>)
+RANGE_CONCEPT(ForwardIt,    std::forward_iterator<T>)
+RANGE_CONCEPT(BidirRange,   rgs::bidirectional_range<T>)
+RANGE_CONCEPT(BidirIt,      std::bidirectional_iterator<T>)
+RANGE_CONCEPT(RA_Range,     rgs::random_access_range<T>)
+RANGE_CONCEPT(RA_It,        std::random_access_iterator<T>)
+RANGE_CONCEPT(ContRange,    rgs::contiguous_range<T>)
+RANGE_CONCEPT(ContIt,       std::contiguous_iterator<T>)
+RANGE_CONCEPT(SizedRange,   rgs::sized_range<T>)
+#undef RANGE_CONCEPT
 
 template<typename T> concept Number = integral<T> || floating_point<T>;
 struct none{};
