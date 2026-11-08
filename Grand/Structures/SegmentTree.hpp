@@ -7,7 +7,7 @@ struct SegmentTree {
     std::vector<T> data;
     Op op;
     T identity;
-    int n;
+    int n = 0;
     SegmentTree(Op f, T id) : op(f), identity(id) {}
     SegmentTree(SizedRange auto&& nums, Op f, T id) : op(f), identity(id) { build(nums); }
 
@@ -23,7 +23,7 @@ struct SegmentTree {
         l+=n; r+=n;
         T left = identity; T right = identity;
         while (l <= r) {
-            if (l & 1) left = op(left, data[l++]);
+            if (l & 1)     left = op(left, data[l++]);
             if (!(r & 1)) right = op(data[r--], right);
             l /= 2; r /= 2;
         }
@@ -36,7 +36,6 @@ struct SegmentTree {
         for (i /= 2; i > 0; i /= 2)
             data[i] = op(data[2*i], data[2*i + 1]); 
     }
-
 };
 
 }
