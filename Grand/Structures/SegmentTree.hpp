@@ -12,7 +12,7 @@ struct SegmentTree {
     SegmentTree(SizedRange auto&& nums, Op f, T id) : op(f), identity(id) { build(nums); }
 
     void build(SizedRange auto&& nums) {
-        n = nums.size();
+        n = rgs::size(nums);
         data.resize(2 * n);
         rgs::copy(nums, data.begin() + n);
         for (int i = n-1; i >= 1; i--) 

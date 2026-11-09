@@ -60,7 +60,7 @@ struct FixedTensor {
     // Linear index. 
     constexpr auto& operator[](this auto&& self, int k) { return self.storage[k]; }
     constexpr auto view(this auto&& self) { 
-        using t = remove_reference_t<decltype(self[0])>;
+        using t = rm_ref<decltype(self[0])>;
         return FixedTensorView<t, Dims...>(self.data()); 
     }
     // `A(i)`: i-th slab (subtensor) along leading axis, rank drops by one. `{4,3,5} -> {3,5}`.
@@ -81,11 +81,11 @@ struct FixedTensor {
 template<TensorType T>  
 using HoldThisTensor = conditional_t<
     !requires(T t) { t.storage; },
-    remove_reference_t<T>,
+    rm_ref<T>,
     T&
 >;
 
-template<TensorType T, int... Dims>
+template<TensorType T, int... Dims> requires (sizeof...(Dims) == T::rank())
 struct FixedSubTensor {
     static constexpr size_t Rank = sizeof...(Dims);
     static constexpr array<int, Rank> dims = {Dims...}; 
@@ -103,12 +103,12 @@ struct FixedSubTensor {
 };
 template<int... Dims>
 auto subtensor(auto&& tensor, const int (&start)[sizeof...(Dims)]) {
-    using T = remove_reference_t<decltype(tensor)>; 
+    using T = rm_ref<decltype(tensor)>; 
     return FixedSubTensor<T, Dims...>{ tensor, std::to_array(start) }; 
 }
 template<int... Dims>
 auto subtensor(auto&& tensor, array<int, sizeof...(Dims)> start) {
-    using T = remove_reference_t<decltype(tensor)>; 
+    using T = rm_ref<decltype(tensor)>; 
     return FixedSubTensor<T, Dims...>{ tensor, start }; 
 }
 

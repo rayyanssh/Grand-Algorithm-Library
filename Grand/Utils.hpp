@@ -17,9 +17,11 @@ using std::integral, std::floating_point,  std::swap, std::max, std::min, std::m
       std::array, std::span, std::pair, std::tuple, std::make_tuple, std::apply, std::tie, std::to_array,
       std::make_index_sequence, std::index_sequence,
       std::countr_zero, std::countl_zero, std::countr_one, std::countl_one, std::popcount, std::has_single_bit, std::bit_ceil, std::bit_floor, std::bit_width,
-      std::is_same_v, std::is_const_v, std::is_reference_v, std::conditional_t, std::convertible_to,
-      std::remove_cvref_t, std::remove_reference_t, std::remove_const_t, std::remove_pointer_t;
-    
+      std::is_same_v, std::is_const_v, std::is_reference_v, std::conditional_t, std::convertible_to;
+template<typename T> using rm_ref   = std::remove_reference_t<T>;
+template<typename T> using rm_const = std::remove_const_t<T>;
+template<typename T> using rm_ptr   = std::remove_pointer_t<T>;
+template<typename T> using rm_cvref = std::remove_cvref_t<T>;
 #define RANGE_CONCEPT(name, ...) \
     template<class T> concept name = __VA_ARGS__;
 RANGE_CONCEPT(InputRange,   rgs::input_range<T>)
@@ -34,6 +36,7 @@ RANGE_CONCEPT(ContRange,    rgs::contiguous_range<T>)
 RANGE_CONCEPT(ContIt,       std::contiguous_iterator<T>)
 RANGE_CONCEPT(SizedRange,   rgs::sized_range<T>)
 #undef RANGE_CONCEPT
+ 
 
 template<typename T> concept Number = integral<T> || floating_point<T>;
 struct none{};

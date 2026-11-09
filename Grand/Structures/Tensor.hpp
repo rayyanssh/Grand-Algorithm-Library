@@ -116,7 +116,7 @@ struct Tensor {
 template<TensorType T>  
 using HoldThisTensor = conditional_t<
     !requires(T t) { t.storage; },
-    remove_reference_t<T>,
+    rm_ref<T>,
     T&
 >;
   
@@ -138,12 +138,12 @@ struct SubTensor {
 };
 template<size_t Rank>
 auto subtensor(auto&& tensor, const int (&start)[Rank], const int (&window)[Rank]) {
-    using T = remove_reference_t<decltype(tensor)>; 
+    using T = rm_ref<decltype(tensor)>; 
     return SubTensor<T, Rank>{tensor, std::to_array(start), std::to_array(window)}; 
 }
 template<size_t Rank>
 auto subtensor(auto&& tensor, array<int, Rank> start, array<int, Rank> window) {
-    using T = remove_reference_t<decltype(tensor)>; 
+    using T = rm_ref<decltype(tensor)>; 
     return SubTensor<T, Rank>{tensor, start, window}; 
 }
 
