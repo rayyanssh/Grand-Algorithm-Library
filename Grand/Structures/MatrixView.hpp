@@ -38,7 +38,7 @@ struct MatrixView : MatrixRules {
 // Returns a `MatrixView` of the `Matrix`'s data.
 template<typename _, int N, int M>
 constexpr auto Matrix<_, N, M>::view(this auto&& self) {
-    using T = remove_pointer_t<decltype(self.data())>;
+    using T = rm_ptr<decltype(self.data())>;
     return MatrixView<T, N, M>(self.data(), self.rows(), self.cols());
 }
 

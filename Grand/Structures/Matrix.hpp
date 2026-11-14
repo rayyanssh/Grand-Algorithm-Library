@@ -6,7 +6,6 @@
 #include "../Utils.hpp"  // brings constexpr int dynamic = -1
 namespace Grand {
 template<typename M> concept MatrixType = requires(M A) { A.rows(); A.cols(); A[0, 0]; };   
-template<typename M> concept ViewMatrixType = MatrixType<M> && !requires(M A) { A.storage; };
 /*
     `Matrix`.    Contiguous storage, 2D indexing. Dynamic or Fixed size. 
     `SubMatrix`. A submatrix view into a matrix.
@@ -114,8 +113,7 @@ struct Matrix<T, N, M> : MatrixRules {
         assert(row.size() == cols()); 
         storage.insert(storage.end(), row.begin(), row.end()); 
         n++; 
-    } 
-    void pop_row() requires (N == dynamic && M != 1) { resize(n-1, m); }
+    }  
     void clear() { 
         if constexpr (N == dynamic) n = 0; 
         if constexpr (M == dynamic) m = 0;
@@ -155,11 +153,13 @@ using Vector = Matrix<T,N,1>;
 template<typename T, int M = dynamic>
 using RowVector = Matrix<T,1,M>;
 
+template<typename M> concept ViewMatrixType = MatrixType<M> && !requires(M A) { A.storage; };
+
 // Decide if to hold a copy of the matrix (if its a cheap view type), or a reference.
 template<MatrixType M>
 using HoldThisMatrix = conditional_t<
     ViewMatrixType<M>,
-    remove_reference_t<M>,
+    rm_ref<M>,
     M&
 >;
 
@@ -187,7 +187,7 @@ template<int R = dynamic, int C = dynamic>
 constexpr auto submatrix(MatrixType auto&& matrix, int i, int j, int rows = R, int cols = C) { 
     if (rows == dynamic) rows = matrix.rows() - i;
     if (cols == dynamic) cols = matrix.cols() - j;
-    using M = remove_reference_t<decltype(matrix)>;
+    using M = rm_ref<decltype(matrix)>;
     return SubMatrix<M, R, C>{ {},
         matrix, i, j, 
         rows,
@@ -212,19 +212,5 @@ void print(const MatrixType auto& A) {
     }
 }
 
-template<typename T> concept NestedType2D = requires(T t) { t[0][0]; size(t); size(t[0]); };
-// Convert a 2d array or vector, or similar nested type
-// to a 2D interface supporting `[i,j]` and `rows(), cols()`
-// I found it useful on leetcode problems with a nested vector input representing a matrix, it works with all my functions
-template<NestedType2D G>
-struct Matrify : MatrixRules {
-    G& grid;
-    Matrify(G& g) : grid(g) {}
-    auto& operator[](int i) const { return grid[i]; }
-    auto& operator[](int i, int j) const { return grid[i][j]; }
-    constexpr int rows() const { return size(grid); }
-    constexpr int cols() const { return size(grid[0]); }
-    using value_type = remove_reference_t<decltype(grid[0][0])>;
-    using MatrixRules::operator=; 
-};
+
 }

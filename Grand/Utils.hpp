@@ -13,6 +13,7 @@
 
 namespace Grand {
 namespace rgs = std::ranges;
+namespace views = std::views;
 using std::integral, std::floating_point,  std::swap, std::max, std::min, std::move,
       std::array, std::span, std::pair, std::tuple, std::make_tuple, std::apply, std::tie, std::to_array,
       std::make_index_sequence, std::index_sequence,

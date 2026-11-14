@@ -1,0 +1,22 @@
+#include "../Structures/Matrix.hpp"
+namespace Grand {
+
+    
+template<typename T> concept NestedType2D = requires(T t) { t[0][0]; size(t); size(t[0]); };
+// Convert a 2d array or vector, or similar nested type
+// to a 2D interface supporting `[i,j]` and `rows(), cols()`
+// I found it useful on leetcode problems with a nested vector input representing a matrix, it works with all my functions
+template<NestedType2D G>
+struct Matrify : MatrixRules {
+    G& grid;
+    Matrify(G& g) : grid(g) {}
+    auto& operator[](int i, int j) const { return grid[i][j]; }
+    auto row(int i) const { return span(&grid[i][0], cols()); }
+    constexpr int rows() const { return size(grid); }
+    constexpr int cols() const { return size(grid[0]); }
+    using value_type = rm_ref<decltype(grid[0][0])>;
+    using MatrixRules::operator=; 
+};
+
+
+}

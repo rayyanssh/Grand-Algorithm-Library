@@ -2,9 +2,11 @@
 #include "../Utils.hpp"
 namespace Grand {
 
+// Bottom-up Segment Tree.
+// The operation must be associative and have an identity element.
 template<typename T, typename Op>
 struct SegmentTree {
-    std::vector<T> data;
+    std::vector<T> tree;
     Op op;
     T identity;
     int n = 0;
@@ -13,18 +15,18 @@ struct SegmentTree {
 
     void build(SizedRange auto&& nums) {
         n = rgs::size(nums);
-        data.resize(2 * n);
-        rgs::copy(nums, data.begin() + n);
+        tree.resize(2 * n);
+        rgs::copy(nums, tree.begin() + n);
         for (int i = n-1; i >= 1; i--) 
-            data[i] = op(data[2*i], data[2*i + 1]);
+            tree[i] = op(tree[2*i], tree[2*i + 1]);
     }
     // Inclusive Range `[l, r]`.
     T query(int l, int r) const {
         l+=n; r+=n;
         T left = identity; T right = identity;
         while (l <= r) {
-            if (l & 1)     left = op(left, data[l++]);
-            if (!(r & 1)) right = op(data[r--], right);
+            if (l & 1)     left = op(left, tree[l++]);
+            if (!(r & 1)) right = op(tree[r--], right);
             l /= 2; r /= 2;
         }
         return op(left, right);
@@ -32,9 +34,9 @@ struct SegmentTree {
 
     void update(int i, T val) {
         i += n;
-        data[i] = val;
+        tree[i] = val;
         for (i /= 2; i > 0; i /= 2)
-            data[i] = op(data[2*i], data[2*i + 1]); 
+            tree[i] = op(tree[2*i], tree[2*i + 1]); 
     }
 };
 
