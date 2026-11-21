@@ -4,7 +4,7 @@
 namespace Grand {
 
 // Variant of the Fenwick Tree for Range Minimum Queries and Updates.   
-// Updates modify the input data that the tree was built from.
+// Stores pointer to original array, and updates will modify that array.
 // Allows any type T that has total ordering (`operator<`) defined.
 // Specify the max element in the ctor.
 // Faster queries than segment tree, but slower updates.
@@ -13,14 +13,13 @@ template<typename T>
 struct FenwickTreeRMQ {
     std::vector<T> BIT1, BIT2;  
     span<T> data; 
-    T inf;
-    int n = 0;   
+    T inf;  
     FenwickTreeRMQ(T inf) : inf(inf) {}
     FenwickTreeRMQ(span<T> nums, T inf) : inf(inf) { build(nums); } 
     void build(span<T> nums) { 
-        n = nums.size();
+        int n = nums.size();
         data = nums;
-        BIT1.resize(n + 1); BIT2.resize(n + 1);
+        BIT1.assign(n + 1, inf); BIT2.assign(n + 1, inf);
         rgs::copy(nums, BIT1.begin() + 1); rgs::copy(nums, BIT2.begin() + 1); 
         for (int i = 1; i <= n; i++) {
             int p = i + (i & -i);
@@ -46,11 +45,12 @@ struct FenwickTreeRMQ {
         res = min(res, data[i-1]); 
         return res;
     } 
-    void update(int k, T v) { k++;
-        T old = data[k-1];
-        data[k-1] = v;
+    void update(int k, T v) {
+        int n = data.size();
+        T old = data[k];
+        data[k] = v;
         T L = inf, R = inf;
-        for (int i = k, l = k - 1, r = k + 1; i <= n; i += i & -i) {
+        for (int i = ++k, l = k - 1, r = k + 1; i <= n; i += i & -i) {
             if (BIT1[i] != old) BIT1[i] = min(v, BIT1[i]);
             else {
                 for (; r < i; r += r & -r) 

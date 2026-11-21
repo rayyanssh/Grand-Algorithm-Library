@@ -5,7 +5,7 @@ namespace Grand {
 
 // Variant of Fenwick Tree for Monoids.
 // Just needs an associative operation and an identity element.
-// Updates modify the input data that the tree was built from. 
+// Stores pointer to original array, and updates will modify that array.
 // Faster queries than segment tree for cheap ops, but slower updates.
 // Adapted from the RMQ Fenwick Tree.
 // Reference: Efficient Range Minimum Queries using Binary Indexed Trees.
@@ -14,8 +14,7 @@ struct FenwickTreeMonoid {
     std::vector<T> BIT1, BIT2;  
     span<T> data; 
     Op op;
-    T identity;
-    int n = 0;  
+    T identity; 
     FenwickTreeMonoid(Op op, T identity) : op(op), identity(identity) {} 
     FenwickTreeMonoid(span<T> nums, Op op, T identity) : op(op), identity(identity) { build(nums); } 
     void build(span<T> nums) { 
@@ -52,6 +51,7 @@ struct FenwickTreeMonoid {
     }
 
     void update(int k, T v) { k++; 
+        int n = data.size();
         T L = identity, R = identity;
         for (int i = k, l = k - 1, r = k + 1; i <= n; i += i & -i) { 
             for (; r < i; r += r & -r) 
