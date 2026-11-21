@@ -1,3 +1,4 @@
+#pragma once
 #include "Matrix.hpp" 
 namespace Grand {
 // MatrixView. A view of contiguous data as a 2D matrix. It is similar to std::mdspan of dimension 2.
@@ -5,10 +6,10 @@ namespace Grand {
 // Assignment `operator=(const MatrixType auto& B)` peforms deep copy of B's elements.
 // To copy only the attributes of another MatrixView, use `.rebind()`. `A.rebind(B)`.
 template<typename T, int N = dynamic, int M = dynamic>
-struct MatrixView : MatrixRules {
+struct MatrixView : MatrixRules<T> {
     T* ptr; int n, m;
-    constexpr MatrixView() : n(max(0, N)), m(max(0, M)), ptr(nullptr) {}
-    constexpr explicit MatrixView(T* p, int r, int c) : n(r), m(c), ptr(p) { assert((N == dynamic || r == N) && (M == dynamic || c == M)); } 
+    constexpr MatrixView() : ptr(nullptr), n(max(0, N)), m(max(0, M)) {}
+    constexpr explicit MatrixView(T* p, int r, int c) : ptr(p), n(r), m(c) { assert((N == dynamic || r == N) && (M == dynamic || c == M)); } 
     constexpr explicit MatrixView(T* p) requires (N != dynamic && M != dynamic) : n(N), m(M), ptr(p) {} 
 
     constexpr T& operator[](int k) const { return ptr[k]; }
@@ -29,14 +30,19 @@ struct MatrixView : MatrixRules {
     // Assignment to another MatrixView is a DEEP COPY of its elements.
     constexpr MatrixView& operator=(const MatrixView& other) {
         assert(other.rows() == n && other.cols() == m);
-        copy(other, rows(), cols());
+        this->copy(other, rows(), cols());
         return *this;
     }
-    using MatrixRules::operator=;
-    using value_type = T;
+    using MatrixRules<T>::operator=; 
 };  
 // Returns a `MatrixView` of the `Matrix`'s data.
 template<typename _, int N, int M>
+constexpr auto Matrix<_, N, M>::view(this auto&& self) {
+    using T = rm_ptr<decltype(self.data())>;
+    return MatrixView<T, N, M>(self.data(), self.rows(), self.cols());
+}
+ 
+template<typename _, int N, int M> requires (N == dynamic || M == dynamic)
 constexpr auto Matrix<_, N, M>::view(this auto&& self) {
     using T = rm_ptr<decltype(self.data())>;
     return MatrixView<T, N, M>(self.data(), self.rows(), self.cols());

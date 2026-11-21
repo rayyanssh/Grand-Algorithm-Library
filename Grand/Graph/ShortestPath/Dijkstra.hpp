@@ -1,3 +1,4 @@
+#pragma once
 #include "../../Structures/DAryHeap.hpp"
 
 // returns `vector<WeightType> dist, dist[i] = distance of i from src`. 

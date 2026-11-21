@@ -1,0 +1,59 @@
+#pragma once
+#include <functional>
+#include <vector>
+#include "../Utils.hpp"
+namespace Grand {
+
+// `Fenwick Tree (Binary Indexed Tree)`. Supports `O(log n)` range queries and point updates.
+// By default, the operation is SUM and the inverse is MINUS.
+// Otherwise, specify the operation, its inverse operation, and the identity.
+// Operation must be commutative and associative.
+// Stores pointer to original array, and updates will modify that array.
+template<typename T, typename Op = std::plus<T>, typename InvOp = std::minus<T>>
+struct FenwickTree {
+    std::vector<T> tree;
+    std::span<T>   data;
+    Op op{};
+    InvOp inv_op{};
+    T identity{}; 
+    // Default ctors for sum fenwick tree
+    FenwickTree() = default;
+    FenwickTree(span<T> nums) { build(nums); }
+
+    FenwickTree(Op op, InvOp inverse, T id) : op(op), inv_op(inverse), identity(id) {}
+    FenwickTree(span<T> nums, Op op, InvOp inverse, T id)
+        : op(op), inv_op(inverse), identity(id) { build(nums); }
+    void build(span<T> nums) {
+        int n = nums.size();
+        data = nums;
+        tree.assign(n + 1, identity);
+        rgs::copy(nums, tree.begin() + 1);
+        for (int i = 1; i <= n; i++) {
+            int p = i + (i & -i);
+            if (p <= n) tree[p] = op(tree[p], tree[i]);
+        }  
+    }
+    T query(int a, int b) const { return inv_op(prefix(b), prefix(a - 1)); }
+    T prefix(int k) const { k++;
+        T sum = identity;
+        for (int i = k; i != 0; i &= (i - 1))
+            sum = op(sum, tree[i]); 
+        return sum;
+    }
+    void update(int i, T x) { 
+        T delta = inv_op(x, data[i]);
+        apply(i, delta);   
+    }
+    void apply(int i, T delta) {
+        int n = data.size();
+        data[i] = op(data[i], delta);
+        for (i++; i <= n; i += i & -i) tree[i] = op(tree[i], delta); 
+    }  
+}; 
+template<SizedRange R> 
+FenwickTree(R&&) -> FenwickTree<rgs::range_value_t<R>>;   
+
+}
+
+
+

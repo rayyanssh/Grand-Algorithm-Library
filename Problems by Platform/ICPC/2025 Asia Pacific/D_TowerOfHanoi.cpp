@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include "../../../Grand/Structures/SegmentTree.hpp"
+#include "../../../Grand/Structures/SegmentTree"
 using namespace std;
 using ull = unsigned long long; 
 constexpr int MOD = 998244353; 

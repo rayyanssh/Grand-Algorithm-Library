@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #include "../Utils.hpp"
 namespace Grand {

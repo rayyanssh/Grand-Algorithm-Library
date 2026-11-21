@@ -1,0 +1,30 @@
+#pragma once
+#include "Matrix.hpp" 
+namespace Grand {
+// Sparse Table answers static range queries in O(1).
+// Requires an associative, idempotent operation.
+template<typename T, typename Op>
+struct SparseTable {
+    Matrix<T> table;
+    Op op;
+    unsigned int n;
+    SparseTable(Op op) : op(op) {}
+    SparseTable(SizedRange auto&& nums, Op op) : op(op) { build(nums); }
+    void build(SizedRange auto&& nums) {
+        n = rgs::size(nums);
+        int log_n = bit_width(n)-1;
+        table.resize(log_n + 1, n);
+        rgs::copy(nums, table.row(0).begin());
+        for (int i = 1; i <= log_n; i++)
+            for (int j = 0; j + (1<<i) <= n; j++)
+                table[i, j] = op(table[i-1, j], table[i-1, j + (1<<(i-1))]); 
+    }
+    T query(int a, int b) const {
+        int k = bit_width(b - a + 1u) - 1;
+        return op(table[k, a], table[k, b - (1<<k) + 1]);
+    }
+}; 
+template<SizedRange R, typename Op>
+SparseTable(R&&, Op) -> SparseTable<rgs::range_value_t<R>, Op>;
+
+}

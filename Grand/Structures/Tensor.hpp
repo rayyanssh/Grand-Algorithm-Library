@@ -1,6 +1,7 @@
 #pragma once 
 #include "../Utils.hpp"   
 #include <vector>
+#include <algorithm>
 namespace Grand { 
 // TensorView: a multidimensional view over contiguous data. Similar to std::mdspan.
 // Tensor : a multidimensional array.
@@ -28,8 +29,7 @@ struct TensorView {
     // Linear index. 
     T& operator[](int k) const { return ptr[k]; }
     // `A(i)`: i-th slab (subtensor) along leading axis, rank drops by one. `{4,3,5} -> {3,5}`.
-    // Fixes the first index to i: `A(i)[j,k]` is the same element as `A[i,j,k]`.
-    // Like `A[i]` on a built-in array such as `int A[4][3][5]` (not `A[i]` here, which is flat).
+    // Fixes the first index to i: `A(i)[j,k]` is the same element as `A[i,j,k]`. 
     TensorView<T, Rank - 1> operator()(int i) const requires (Rank > 1) { 
         array<int, Rank - 1> rem_dims; 
         for (int j = 0; j < Rank - 1; j++) rem_dims[j] = dims[j+1];
@@ -46,13 +46,14 @@ struct TensorView {
         sub_dims[0] = count;
         return TensorView<T, Rank>(start, sub_dims);
     }
-    static consteval int rank() { return Rank; }
+    static constexpr int rank() { return Rank; }
     constexpr int extent(int d) const { return dims[d]; }
     constexpr auto shape() const { return dims; }
     constexpr long long size() const { return apply(product_dims, dims); }
     T* begin() const { return ptr; }
     T* end()   const { return ptr + size(); }
     T* data()  const { return ptr; }
+    using value_type = T;
 };
 template<typename T, typename... dims>
 TensorView(T*, dims...) -> TensorView<T, sizeof...(dims)>;
@@ -102,13 +103,14 @@ struct Tensor {
     void resize(auto... ds) requires (sizeof...(ds) == Rank) { resize(array{(int)ds...}); } 
     void reserve(int c) { storage.reserve(c); }
 
-    static consteval int rank() { return Rank; } 
+    static constexpr int rank() { return Rank; } 
     int extent(int i) const { return dims[i]; }
     long long size() const { return apply(product_dims, dims); }
     auto shape() const { return dims; }
     auto* data(this auto&& self) { return self.storage.data(); }
     auto begin(this auto&& self) { return self.storage.begin(); }
     auto   end(this auto&& self) { return self.storage.end(); }
+    using value_type = T;
 }; 
 
 
@@ -123,18 +125,28 @@ using HoldThisTensor = conditional_t<
 
 template<TensorType T, size_t Rank>
 struct SubTensor {
-    HoldThisTensor<T> tensor;
-    array<int, Rank> start;
-    array<int, Rank> dims;
+    static constexpr size_t T_Rank = rm_cvref<T>::rank(); // underlying rank
+    static constexpr size_t Fixed  = T_Rank - Rank;
+    HoldThisTensor<T>  tensor;
+    array<int, T_Rank> start;
+    array<int, Rank>   dims;
     auto& operator[](auto... idx) const requires (sizeof...(idx) == Rank) { 
+        array<int, Rank> ix = {(int)idx...};
         return [&]<size_t... I>(index_sequence<I...>) -> auto& {
-            return tensor[(start[I] + (int)idx)...];
-        }(make_index_sequence<Rank>());
+            return tensor[(start[I] + (I < Fixed ? 0 : ix[I - Fixed]))...];
+        }(make_index_sequence<T_Rank>());
     }
-    static consteval int rank() { return Rank; }
+    SubTensor<T, Rank - 1> operator()(int i) const requires (Rank > 1) {
+        SubTensor<T, Rank - 1> s{tensor, start};
+        s.start[Fixed] += i;
+        for (int j = 0; j < Rank - 1; j++) s.dims[j] = dims[j+1]; 
+        return s;
+    }
+    static constexpr int rank() { return Rank; }
     int extent(int i) const { return dims[i]; }
     auto shape() const { return dims; }
     long long size() const { return apply(product_dims, dims);}
+    using value_type = T;
 };
 template<size_t Rank>
 auto subtensor(auto&& tensor, const int (&start)[Rank], const int (&window)[Rank]) {

@@ -1,4 +1,4 @@
-#include "../../../Grand/Structures/Deque.hpp"
+#include "../../../Grand/Structures/Deque"
 #include <cassert>
 #include <iostream>
 using namespace Grand;

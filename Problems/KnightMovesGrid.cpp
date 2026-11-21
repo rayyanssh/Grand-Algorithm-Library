@@ -1,5 +1,5 @@
 #include "../Grand/Matrix/SpecialMatrices.hpp"
-#include "../Grand/Structures/Deque.hpp"
+#include "../Grand/Structures/Deque"
 using namespace Grand;
 
 array<pair<int,int>, 8> neighbors(int i, int j) {

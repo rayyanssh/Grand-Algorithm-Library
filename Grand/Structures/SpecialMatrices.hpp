@@ -1,3 +1,4 @@
+#pragma once
 #include "Matrix.hpp" // To bring the concept and is_equal() function
 namespace Grand {
 static constexpr bool Lower = true;

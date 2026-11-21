@@ -1,3 +1,4 @@
+#pragma once
 #include "../Utils.hpp"
 namespace Grand {
  
@@ -9,7 +10,7 @@ concept TensorType = requires { T::rank(); };
 #endif
 
 
-template<typename T, int... Dims>
+template<typename T, int... Dims> requires (sizeof...(Dims) > 0)
 struct FixedTensorView {
     static constexpr size_t Rank = sizeof...(Dims);
     static constexpr array<int, Rank> dims = {Dims...}; 
@@ -33,16 +34,17 @@ struct FixedTensorView {
             return FixedTensorView<T, Rest...>(start);
         }.template operator()<Dims...>();
     }
-    static consteval int rank() { return Rank; }
-    static consteval int extent(int d) { return dims[d]; }
-    static consteval auto shape() { return dims; }
-    static consteval long long size() { return product_dims(Dims...); }
+    static constexpr int rank() { return Rank; }
+    static constexpr int extent(int d) { return dims[d]; }
+    static constexpr auto shape() { return dims; }
+    static constexpr long long size() { return product_dims(Dims...); }
     constexpr T* begin() const { return ptr; }
     constexpr T* end()   const { return ptr + size(); }
     constexpr T* data()  const { return ptr; }
+    using value_type = T;
 };
 
-template<typename T, int... Dims>
+template<typename T, int... Dims> requires (sizeof...(Dims) > 0)
 struct FixedTensor {
     static constexpr size_t Rank = sizeof...(Dims);
     static constexpr array<int, Rank> dims = {Dims...}; 
@@ -69,13 +71,14 @@ struct FixedTensor {
     constexpr auto operator()(this auto&& self, int i) requires (Rank > 1) { 
         return self.view()(i);
     }
-    static consteval int rank() { return Rank; }
-    static consteval int extent(int d) { return dims[d]; }
-    static consteval auto shape() { return dims; }
-    static consteval long long size() { return product_dims(Dims...); }
+    static constexpr int rank() { return Rank; }
+    static constexpr int extent(int d) { return dims[d]; }
+    static constexpr auto shape() { return dims; }
+    static constexpr long long size() { return product_dims(Dims...); }
     constexpr auto* begin(this auto&& self) { return self.storage.begin(); }
     constexpr auto* end(this auto&& self)   { return self.storage.end(); }
     constexpr auto* data(this auto&& self)  { return self.storage.data(); }
+    using value_type = T;
 };
 
 template<TensorType T>  
@@ -85,30 +88,44 @@ using HoldThisTensor = conditional_t<
     T&
 >;
 
-template<TensorType T, int... Dims> requires (sizeof...(Dims) == T::rank())
+template<TensorType T, int... Dims>
 struct FixedSubTensor {
     static constexpr size_t Rank = sizeof...(Dims);
+    static constexpr size_t T_Rank = rm_cvref<T>::rank(); // underlying rank
+    static constexpr size_t Fixed  = T_Rank - Rank;
     static constexpr array<int, Rank> dims = {Dims...}; 
     HoldThisTensor<T> tensor;
-    array<int, Rank> start;
+    array<int, T_Rank> start;
     constexpr auto& operator[](auto... idx) const requires (sizeof...(idx) == Rank) { 
+        array<int, Rank> ix = {(int)idx...};
         return [&]<size_t... I>(index_sequence<I...>) -> auto& {
-            return tensor[(start[I] + (int)idx)...];
-        }(make_index_sequence<Rank>());
+            return tensor[(start[I] + (I < Fixed ? 0 : ix[I - Fixed]))...];
+        }(make_index_sequence<T_Rank>());
     }
-    static consteval int rank() { return Rank; }
-    static consteval int extent(int d) { return dims[d]; }
-    static consteval auto shape() { return dims; }
-    static consteval long long size() { return product_dims(Dims...); } 
+    
+    constexpr auto operator()(int i) const requires (Rank > 1) {
+        return [&]<int First, int... Rest>() {
+            FixedSubTensor<T, Rest...> sub{tensor, start};
+            sub.start[Fixed] += i;
+            return sub;
+        }.template operator()<Dims...>(); 
+    }
+    static constexpr int rank() { return Rank; }
+    static constexpr int extent(int d) { return dims[d]; }
+    static constexpr auto shape() { return dims; }
+    static constexpr long long size() { return product_dims(Dims...); } 
+    using value_type = T::value_type;
 };
 template<int... Dims>
-auto subtensor(auto&& tensor, const int (&start)[sizeof...(Dims)]) {
+constexpr auto subtensor(auto&& tensor, const int (&start)[sizeof...(Dims)]) {
     using T = rm_ref<decltype(tensor)>; 
+    static_assert(T::rank() == sizeof...(Dims));
     return FixedSubTensor<T, Dims...>{ tensor, std::to_array(start) }; 
 }
 template<int... Dims>
-auto subtensor(auto&& tensor, array<int, sizeof...(Dims)> start) {
+constexpr auto subtensor(auto&& tensor, array<int, sizeof...(Dims)> start) {
     using T = rm_ref<decltype(tensor)>; 
+    static_assert(T::rank() == sizeof...(Dims));
     return FixedSubTensor<T, Dims...>{ tensor, start }; 
 }
 

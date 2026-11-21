@@ -1,0 +1,141 @@
+#pragma once
+#include "../Utils.hpp"
+namespace Grand {
+ 
+#ifndef __GRAND_TENSOR 
+#define __GRAND_TENSOR 
+inline constexpr auto product_dims = [](auto... dims) { return (1LL * ... * dims); };
+template<typename T>
+concept TensorType = requires { T::rank(); };
+#endif
+
+
+template<typename T, int... Dims> requires (sizeof...(Dims) > 0)
+struct FixedTensorView {
+    static constexpr size_t Rank = sizeof...(Dims);
+    static constexpr array<int, Rank> dims = {Dims...}; 
+    T* ptr;
+    constexpr FixedTensorView(T* d = nullptr) : ptr(d) {}
+    constexpr T& operator[](auto... idx) const requires (sizeof...(idx) == Rank) { 
+        int indices[Rank] = { (int)idx... };
+        size_t offset = indices[0];
+        for (int i = 1; i < Rank; ++i)
+            offset = offset * dims[i] + indices[i];
+        return ptr[offset];
+    }
+    // Linear index. 
+    constexpr T& operator[](int k) const { return ptr[k]; } 
+    // `A(i)`: i-th slab (subtensor) along leading axis, rank drops by one. `{4,3,5} -> {3,5}`.
+    // `A(i)[j,k]` is the same element as `A[i,j,k]`. 
+    // Return type: `FixedTensorView<T, Dims[1...]>`.
+    constexpr auto operator()(int i) const requires (Rank > 1) { 
+        return [&]<int First, int... Rest>() {
+            T* start = ptr + i * product_dims(Rest...);
+            return FixedTensorView<T, Rest...>(start);
+        }.template operator()<Dims...>();
+    }
+    static constexpr int rank() { return Rank; }
+    static constexpr int extent(int d) { return dims[d]; }
+    static constexpr auto shape() { return dims; }
+    static constexpr long long size() { return product_dims(Dims...); }
+    constexpr T* begin() const { return ptr; }
+    constexpr T* end()   const { return ptr + size(); }
+    constexpr T* data()  const { return ptr; }
+    using value_type = T;
+};
+
+template<typename T, int... Dims> requires (sizeof...(Dims) > 0)
+struct FixedTensor {
+    static constexpr size_t Rank = sizeof...(Dims);
+    static constexpr array<int, Rank> dims = {Dims...}; 
+    array<T, product_dims(Dims...)> storage;
+    constexpr FixedTensor(T val = {}) { storage.fill(val); }
+    constexpr FixedTensor(init_list<T> init) : storage{} { rgs::copy(init, storage.begin()); }
+
+    constexpr T& operator[](auto... idx) requires (sizeof...(idx) == Rank) {
+        int indices[Rank] = { (int)idx... };
+        size_t offset = indices[0];
+        for (int i = 1; i < Rank; ++i)
+            offset = offset * dims[i] + indices[i];
+        return storage[offset];
+    }
+    constexpr const T& operator[](auto... idx) const requires (sizeof...(idx) == Rank) {
+        int indices[Rank] = { (int)idx... };
+        size_t offset = indices[0];
+        for (int i = 1; i < Rank; ++i)
+            offset = offset * dims[i] + indices[i];
+        return storage[offset];
+    }
+    // Linear index. 
+    constexpr T& operator[](int k) { return storage[k]; }
+    constexpr const T& operator[](int k) const { return storage[k]; }
+    constexpr auto view() { return FixedTensorView<T, Dims...>(data()); }
+    constexpr auto view() const { return FixedTensorView<const T, Dims...>(data()); }
+    // `A(i)`: i-th slab (subtensor) along leading axis, rank drops by one. `{4,3,5} -> {3,5}`.
+    // `A(i)[j,k]` is the same element as `A[i,j,k]`. 
+    // Return type: `FixedTensorView<T, Dims[1...]>`.
+    constexpr auto operator()(int i) requires (Rank > 1) { return view()(i); }
+    constexpr auto operator()(int i) const requires (Rank > 1) { return view()(i); }
+
+    static constexpr int rank() { return Rank; }
+    static constexpr int extent(int d) { return dims[d]; }
+    static constexpr auto shape() { return dims; }
+    static constexpr long long size() { return product_dims(Dims...); }
+    constexpr T* begin() { return storage.begin(); }
+    constexpr const T* begin() const { return storage.begin(); }
+    constexpr T* end() { return storage.end(); }
+    constexpr const T* end() const { return storage.end(); }
+    constexpr T* data() { return storage.data(); }
+    constexpr const T* data() const { return storage.data(); }
+    using value_type = T;
+};
+
+template<TensorType T>  
+using HoldThisTensor = conditional_t<
+    !requires(T t) { t.storage; },
+    rm_ref<T>,
+    T&
+>;
+
+template<TensorType T, int... Dims>
+struct FixedSubTensor {
+    static constexpr size_t Rank = sizeof...(Dims);
+    static constexpr size_t T_Rank = rm_cvref<T>::rank();
+    static constexpr size_t Fixed  = T_Rank - Rank;
+    static constexpr array<int, Rank> dims = {Dims...}; 
+    HoldThisTensor<T> tensor;
+    array<int, T_Rank> start;
+    constexpr auto& operator[](auto... idx) const requires (sizeof...(idx) == Rank) { 
+        array<int, Rank> ix = {(int)idx...};
+        return [&]<size_t... I>(index_sequence<I...>) -> auto& {
+            return tensor[(start[I] + (I < Fixed ? 0 : ix[I - Fixed]))...];
+        }(make_index_sequence<T_Rank>());
+    }
+    constexpr auto operator()(int i) const requires (Rank > 1) {
+        return [&]<int First, int... Rest>() {
+            FixedSubTensor<T, Rest...> sub{tensor, start};
+            sub.start[Fixed] += i;
+            return sub;
+        }.template operator()<Dims...>();
+    }
+    static constexpr int rank() { return Rank; }
+    static constexpr int extent(int d) { return dims[d]; }
+    static constexpr auto shape() { return dims; }
+    static constexpr long long size() { return product_dims(Dims...); } 
+    using value_type = T::value_type;
+};
+template<int... Dims>
+constexpr auto subtensor(auto&& tensor, const int (&start)[sizeof...(Dims)]) {
+    using T = rm_ref<decltype(tensor)>; 
+    static_assert(T::rank() == sizeof...(Dims));
+    return FixedSubTensor<T, Dims...>{ tensor, std::to_array(start) }; 
+}
+template<int... Dims>
+constexpr auto subtensor(auto&& tensor, array<int, sizeof...(Dims)> start) {
+    using T = rm_ref<decltype(tensor)>; 
+    static_assert(T::rank() == sizeof...(Dims));
+    return FixedSubTensor<T, Dims...>{ tensor, start }; 
+}
+
+
+}
