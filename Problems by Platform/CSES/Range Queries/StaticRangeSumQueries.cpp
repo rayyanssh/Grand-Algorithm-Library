@@ -15,6 +15,5 @@ int main() {
         int a, b;
         cin >> a >> b;
         cout << prefix[b] - prefix[a-1] << '\n';
-    }
-    
+    }   
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "../Utils.hpp"
+#include <algorithm>
 #include <vector>
 namespace Grand {
 
@@ -76,5 +77,5 @@ struct FenwickTreeRMQ {
         }
     } 
 };
-
+template<ContRange R> FenwickTreeRMQ(R&&, RangeValue<R>) -> FenwickTreeRMQ<RangeValue<R>>;    
 }

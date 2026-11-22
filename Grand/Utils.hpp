@@ -2,6 +2,7 @@
 // Just general utilities that I use often
 #include <concepts> 
 #include <bit>
+#include <algorithm>
 #include <initializer_list>
 #include <iterator>
 #include <type_traits>  
@@ -37,6 +38,7 @@ RANGE_CONCEPT(ContIt,       std::contiguous_iterator<T>)
 RANGE_CONCEPT(SizedRange,   rgs::sized_range<T>)
 #undef RANGE_CONCEPT
  
+template<typename R> using RangeValue = rgs::range_value_t<R>;
 
 template<typename T> concept Number = integral<T> || floating_point<T>;
 template<typename T> concept Scalar = Number<T> || requires(T a, T b) {

@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <algorithm>
 #include <vector>
 #include "../Utils.hpp"
 namespace Grand {
@@ -50,9 +51,9 @@ struct FenwickTree {
         for (i++; i <= n; i += i & -i) tree[i] = op(tree[i], delta); 
     }  
 }; 
-template<SizedRange R> 
-FenwickTree(R&&) -> FenwickTree<rgs::range_value_t<R>>;   
-
+template<ContRange R> FenwickTree(R&&) -> FenwickTree<RangeValue<R>>;   
+template<ContRange R, typename Op, typename InvOp> 
+FenwickTree(R&&, Op, InvOp, RangeValue<R>) -> FenwickTree<RangeValue<R>, Op, InvOp>;   
 }
 
 

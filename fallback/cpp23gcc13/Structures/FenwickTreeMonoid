@@ -72,6 +72,7 @@ struct FenwickTreeMonoid {
         }
         data[k-1] = v;
     }
-};
-
+}; 
+template<ContRange R, typename Op> 
+FenwickTreeMonoid(R&&, Op, RangeValue<R>) -> FenwickTreeMonoid<RangeValue<R>, Op>;   
 }
